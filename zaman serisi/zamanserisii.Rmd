@@ -1,0 +1,111 @@
+library(tidyverse) 
+library(tidyr) 
+library(tidyquant)
+library(fpp3) 
+library(fpp2) 
+library(seasonal)
+library("TTR")
+library(ggplot2)
+library(ggseas)
+library(seasonal)
+library(stats)
+library(readxl)
+install.packages("fpp2")
+library(fpp2)
+ 
+rob <- read.csv("Robberies.csv",sep=";")
+rob
+rob_ts <- ts(rob$Robberies,
+start = c(1966, 01),
+end = c(1975, 10),
+frequency = 12)
+
+rob_ts
+#autoplot
+autoplot(rob_ts) +
+ggtitle("Boston Aylık Silahlı Soygun Verisi") +
+xlab("Ay") +
+ylab("Sayı")
+
+#mevsımsel plot
+ggseasonplot(x = rob_ts,
+year.labels = TRUE) +
+ylab("Sayı") +
+ggtitle("Silahlı Soygun Verisi Mevsimsel Grafiği")
+
+
+ggsubseriesplot(x = rob_ts) +
+ylab("Sayı") +
+ggtitle("Silahlı Soygun Verisi Mevsimsel Alt Seri Grafiği")
+#ACF grafiği
+ggAcf(rob_ts, lag = 60) +
+ggtitle("Otokorelasyon Fonksiyonu Grafiği")
+
+#model egitim
+train_ts  <- window(rob_ts, end = c(1973, 12))
+test_ts <- window(rob_ts, start = c(1974, 01))
+
+
+easter <- easter(train_ts)
+Model_Linear <- tslm(train_ts ~ trend + season + easter)
+summary(Model_Linear)
+
+#NAİVE METHOD
+f_Linear  <- forecast(Model_Linear, h = 22, newdata = data.frame(easter = easter(test_ts)))
+f_Mean <- meanf(train_ts, h = 22)
+f_Naive <- naive(train_ts, h = 22)
+
+
+accuracy(f_Linear, test_ts)
+accuracy(f_Mean, test_ts)
+accuracy(f_Naive, test_ts)
+
+autoplot(Data_ts) +
+autolayer(f_Linear, series = "Lineer Model", PI=F) +
+autolayer(f_Naive, series = "Naive Model", PI=F) +
+guides(colour=guide_legend(title="Tahmin")) +
+scale_y_continuous(limits = c(0, 500))
+
+#TOPLAMSAL AYRIŞTIRMA
+dytime <- ts(rob$Robberies, frequency=12, start=c(1966),end=c(1975))
+dytime
+plot(dytime)
+#bileşenlerini buluyoruz
+dycomponents <- decompose(dytime)
+dycomponents
+plot(dycomponents) 
+
+dytimeadjusted <- dytime - dycomponents$seasonal
+dytimeadjusted
+plot(dytimeadjusted)
+
+# mevsimsel bileşen
+mevsimsel_index<-dycomponents$seasonal
+
+# hareket hareketli ortalama
+sma12<- SMA(rob_ts, n=12) 
+sma12
+
+#merkezi hareketli ortalama
+sale_date_M<-ma(rob_ts,order=60,centre=TRUE)
+logrob<- log(rob_ts)
+plot.ts(logrob)
+
+sma <- SMA(rob_ts, n = 12)
+sma
+
+ema <- EMA(rob_ts, n = 12) 
+ema
+
+#timeadjusted<-xtime-xcomponents$seasonal
+
+rob_ts <- ts(rob$Robberies, frequency=12)
+rob_ts
+decomposed <- decompose(rob_ts)
+
+#log dönüşüm
+logrob<- log(rob_ts)
+plot.ts(logrob)
+
+
+sale_date_M<-ma(rob_ts,order=60,centre=TRUE)
